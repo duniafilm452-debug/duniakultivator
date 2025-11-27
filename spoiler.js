@@ -7,6 +7,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 // === ELEMEN DOM ===
 const spoilerFeed = document.getElementById('spoilerFeed');
 const loadingIndicator = document.getElementById('loadingIndicator');
+const endOfContent = document.getElementById('endOfContent');
 
 // === VARIABEL GLOBAL ===
 let spoilerVideos = [];
@@ -15,6 +16,7 @@ let isScrolling = false;
 let observer;
 let scrollTimeout;
 let isUserInteracted = false;
+let hasReachedEnd = false;
 
 // === LOAD SPOILER VIDEOS ===
 document.addEventListener('DOMContentLoaded', async () => {
@@ -23,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   await loadSpoilerVideos();
   setupScrollHandler();
+  setupScrollDetection();
 });
 
 function handleFirstUserInteraction() {
@@ -36,6 +39,7 @@ function handleFirstUserInteraction() {
 async function loadSpoilerVideos() {
   try {
     loadingIndicator.style.display = 'block';
+    endOfContent.style.display = 'none';
     document.body.classList.add('scroll-lock');
 
     const { data: spoilers, error } = await supabase
@@ -270,6 +274,8 @@ function setupIntersectionObserver() {
 
         if (entry.isIntersecting && entry.intersectionRatio >= 0.8) {
           currentPlayingIndex = index;
+          hasReachedEnd = false;
+          endOfContent.style.display = 'none';
           
           document.querySelectorAll('.spoiler-video').forEach((v, i) => {
             if (i !== index && !v.paused) {
@@ -332,6 +338,31 @@ function setupScrollHandler() {
   }, { passive: true });
 }
 
+function setupScrollDetection() {
+  spoilerFeed.addEventListener('scroll', () => {
+    checkIfReachedEnd();
+  });
+}
+
+function checkIfReachedEnd() {
+  const lastItem = document.querySelector('.spoiler-item:last-child');
+  if (!lastItem) return;
+
+  const lastItemRect = lastItem.getBoundingClientRect();
+  const feedRect = spoilerFeed.getBoundingClientRect();
+  
+  // Check if last item is fully visible
+  if (lastItemRect.bottom <= feedRect.bottom && lastItemRect.top >= feedRect.top) {
+    if (!hasReachedEnd) {
+      hasReachedEnd = true;
+      endOfContent.style.display = 'flex';
+    }
+  } else {
+    hasReachedEnd = false;
+    endOfContent.style.display = 'none';
+  }
+}
+
 function handleScrollEnd() {
   const spoilerItems = document.querySelectorAll('.spoiler-item');
   let closestIndex = 0;
@@ -349,7 +380,11 @@ function handleScrollEnd() {
 
   if (closestIndex !== currentPlayingIndex) {
     currentPlayingIndex = closestIndex;
+    hasReachedEnd = false;
+    endOfContent.style.display = 'none';
   }
+  
+  checkIfReachedEnd();
 }
 
 function togglePlayPause(video, overlay) {
@@ -422,6 +457,8 @@ function scrollToIndex(index) {
   if (targetItem) {
     targetItem.scrollIntoView({ behavior: 'smooth' });
     currentPlayingIndex = index;
+    hasReachedEnd = false;
+    endOfContent.style.display = 'none';
   }
 }
 

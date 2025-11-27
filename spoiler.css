@@ -1,4 +1,4 @@
- /* === SPOILER STYLES === */
+/* === SPOILER STYLES === */
 
 * {
   margin: 0;
@@ -119,6 +119,36 @@ body {
   height: auto;
   object-fit: contain;
   background: #000;
+}
+
+/* End of Content Indicator */
+.end-of-content {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+  color: #666;
+  padding: 20px;
+  background: #000;
+  scroll-snap-align: start;
+}
+
+.end-of-content i {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.end-of-content p {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+.end-of-content .subtext {
+  font-size: 0.9rem;
+  opacity: 0.7;
 }
 
 /* Video Loading */
@@ -399,14 +429,16 @@ body {
     -webkit-line-clamp: 2;
   }
   
-  .watch-full-btn {
-    padding: 12px 24px;
-    font-size: 0.95rem;
-    min-width: 180px;
-  }
-  
   .play-pause-overlay i {
     font-size: 4rem;
+  }
+  
+  .end-of-content i {
+    font-size: 3.5rem;
+  }
+  
+  .end-of-content p {
+    font-size: 1rem;
   }
 }
 
@@ -450,13 +482,6 @@ body {
     margin-bottom: 15px;
   }
   
-  .watch-full-btn {
-    padding: 11px 22px;
-    font-size: 0.9rem;
-    min-width: 160px;
-    border-radius: 22px;
-  }
-  
   .play-pause-overlay i {
     font-size: 3.5rem;
   }
@@ -472,6 +497,18 @@ body {
   
   .loading-indicator p {
     font-size: 0.9rem;
+  }
+  
+  .end-of-content i {
+    font-size: 3rem;
+  }
+  
+  .end-of-content p {
+    font-size: 0.95rem;
+  }
+  
+  .end-of-content .subtext {
+    font-size: 0.85rem;
   }
 }
 
@@ -491,8 +528,7 @@ body:has(.spoiler-feed) footer {
 /* Smooth transitions */
 .spoiler-video,
 .video-overlay,
-.play-pause-overlay,
-.watch-full-btn {
+.play-pause-overlay {
   transition: all 0.3s ease;
 }
 

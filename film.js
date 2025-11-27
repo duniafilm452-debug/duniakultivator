@@ -4,10 +4,14 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Cloudflare R2 Configuration
+const CLOUDFLARE_R2_BASE_URL = "https://pub-97e59aa214094a8abdf6ba4437f78b21.r2.dev";
+
 // === ELEMEN DOM ===
 const videoPlayer = document.getElementById('videoPlayer');
 const videoSource = document.getElementById('videoSource');
 const filmTitle = document.getElementById('filmTitle');
+const episodeTitle = document.getElementById('episodeTitle');
 const filmViews = document.getElementById('filmViews');
 const filmRating = document.getElementById('filmRating');
 const filmYear = document.getElementById('filmYear');
@@ -19,15 +23,6 @@ const commentsList = document.getElementById('commentsList');
 const commentInput = document.getElementById('commentInput');
 const submitComment = document.getElementById('submitComment');
 
-// Custom Controls
-const playPauseBtn = document.getElementById('playPauseBtn');
-const progressBar = document.getElementById('progressBar');
-const currentTime = document.getElementById('currentTime');
-const duration = document.getElementById('duration');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-const volumeBtn = document.getElementById('volumeBtn');
-const volumeBar = document.getElementById('volumeBar');
-
 // Action Buttons
 const likeBtn = document.getElementById('likeBtn');
 const favoriteBtn = document.getElementById('favoriteBtn');
@@ -37,6 +32,7 @@ const shareBtn = document.getElementById('shareBtn');
 let currentFilmId = null;
 let currentEpisodeId = null;
 let currentFilmData = null;
+let currentEpisodeData = null;
 let isPlaying = false;
 let isLiked = false;
 let isFavorited = false;
@@ -59,6 +55,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadRecommendations();
   await loadComments(currentFilmId);
 
+  // Set video untuk auto play
+  videoPlayer.autoplay = true;
+  videoPlayer.muted = true; // Auto play biasanya membutuhkan muted
+
   // Handle episode parameter - jika "latest" maka mainkan episode terbaru
   if (episodeParam === 'latest') {
     await playLatestEpisode();
@@ -68,7 +68,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Setup event listeners
   setupEventListeners();
-  setupCustomControls();
 });
 
 // === LOAD DETAIL FILM ===
@@ -159,8 +158,11 @@ async function playLatestEpisode() {
   if (error) {
     console.error('Error loading latest episode:', error);
     // Fallback ke trailer jika tidak ada episode
-    videoSource.src = currentFilmData.video_url;
-    videoPlayer.load();
+    if (currentFilmData.video_url) {
+      videoSource.src = getCloudflareR2Url(currentFilmData.video_url);
+      videoPlayer.load();
+      episodeTitle.textContent = "Trailer";
+    }
     return;
   }
 
@@ -181,9 +183,18 @@ async function playEpisode(episodeId) {
   }
 
   currentEpisodeId = episodeId;
-  videoSource.src = episode.video_url;
+  currentEpisodeData = episode;
+  
+  // Gunakan Cloudflare R2 URL
+  const videoUrl = getCloudflareR2Url(episode.video_url);
+  videoSource.src = videoUrl;
   videoPlayer.load();
-  videoPlayer.play();
+  
+  // Set autoplay dan unmute setelah user interaction
+  videoPlayer.muted = false;
+  
+  // Update episode title
+  episodeTitle.textContent = `Episode ${episode.episode_number}: ${episode.title}`;
 
   // Update episode views
   await supabase
@@ -193,6 +204,19 @@ async function playEpisode(episodeId) {
 
   // Update watch history
   await updateWatchHistory(currentFilmId, episodeId);
+}
+
+// === CLOUDFLARE R2 URL HELPER ===
+function getCloudflareR2Url(filePath) {
+  // Jika sudah full URL, return langsung
+  if (filePath.startsWith('http')) {
+    return filePath;
+  }
+  
+  // Jika relative path, gabungkan dengan base URL Cloudflare R2
+  // Hapus leading slash jika ada
+  const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+  return `${CLOUDFLARE_R2_BASE_URL}/${cleanPath}`;
 }
 
 // === LOAD RECOMMENDATIONS ===
@@ -217,7 +241,7 @@ async function loadRecommendations() {
     card.innerHTML = `
       <a href="film.html?id=${film.id}">
         <div class="thumbnail-container">
-          <img src="${film.image_url}" alt="${film.title}">
+          <img src="${getCloudflareR2Url(film.image_url)}" alt="${film.title}">
         </div>
         <h4>${film.title}</h4>
         <div class="film-meta">
@@ -440,66 +464,6 @@ async function updateWatchHistory(filmId, episodeId = null) {
     .upsert(watchData, { onConflict: 'user_id,film_id,episode_id' });
 }
 
-// === CUSTOM VIDEO CONTROLS ===
-function setupCustomControls() {
-  // Play/Pause
-  playPauseBtn.addEventListener('click', () => {
-    if (videoPlayer.paused) {
-      videoPlayer.play();
-    } else {
-      videoPlayer.pause();
-    }
-  });
-
-  videoPlayer.addEventListener('play', () => {
-    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-    isPlaying = true;
-  });
-
-  videoPlayer.addEventListener('pause', () => {
-    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-    isPlaying = false;
-  });
-
-  // Progress Bar
-  videoPlayer.addEventListener('timeupdate', () => {
-    const progress = (videoPlayer.currentTime / videoPlayer.duration) * 100;
-    progressBar.value = progress;
-    currentTime.textContent = formatTime(videoPlayer.currentTime);
-  });
-
-  progressBar.addEventListener('input', () => {
-    const time = (progressBar.value / 100) * videoPlayer.duration;
-    videoPlayer.currentTime = time;
-  });
-
-  // Duration
-  videoPlayer.addEventListener('loadedmetadata', () => {
-    duration.textContent = formatTime(videoPlayer.duration);
-  });
-
-  // Volume
-  volumeBar.addEventListener('input', () => {
-    videoPlayer.volume = volumeBar.value;
-    updateVolumeIcon();
-  });
-
-  volumeBtn.addEventListener('click', () => {
-    videoPlayer.volume = videoPlayer.volume === 0 ? 1 : 0;
-    volumeBar.value = videoPlayer.volume;
-    updateVolumeIcon();
-  });
-
-  // Fullscreen
-  fullscreenBtn.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-      videoPlayer.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  });
-}
-
 // === HELPER FUNCTIONS ===
 function formatTime(seconds) {
   const mins = Math.floor(seconds / 60);
@@ -546,17 +510,6 @@ function updateFavoriteButton() {
   }
 }
 
-function updateVolumeIcon() {
-  const icon = volumeBtn.querySelector('i');
-  if (videoPlayer.volume === 0) {
-    icon.className = 'fas fa-volume-mute';
-  } else if (videoPlayer.volume < 0.5) {
-    icon.className = 'fas fa-volume-down';
-  } else {
-    icon.className = 'fas fa-volume-up';
-  }
-}
-
 function setupEventListeners() {
   // Auto-save progress every 10 seconds
   setInterval(() => {
@@ -564,4 +517,13 @@ function setupEventListeners() {
       updateWatchHistory(currentFilmId, currentEpisodeId);
     }
   }, 10000);
+  
+  // Handle video play events
+  videoPlayer.addEventListener('play', () => {
+    isPlaying = true;
+  });
+
+  videoPlayer.addEventListener('pause', () => {
+    isPlaying = false;
+  });
 }
