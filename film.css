@@ -1,0 +1,590 @@
+/* === FILM DETAIL PAGE STYLES === */
+
+.film-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Video Section */
+.video-section {
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  background: #000;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.video-container video {
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  display: block;
+}
+
+/* Custom Controls */
+.custom-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.video-container:hover .custom-controls {
+  opacity: 1;
+}
+
+.control-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.3s;
+}
+
+.control-btn:hover {
+  color: #00bcd4;
+}
+
+.progress-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 5px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.progress-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #0090cc;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.progress-bar::-webkit-slider-thumb:hover {
+  background: #00bcd4;
+}
+
+.volume-bar {
+  width: 80px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.volume-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #0090cc;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.volume-bar::-webkit-slider-thumb:hover {
+  background: #00bcd4;
+}
+
+/* Video Info */
+.video-info {
+  padding: 20px;
+}
+
+.video-info h1 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #333;
+  line-height: 1.3;
+}
+
+.video-meta {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.video-meta span {
+  background: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.film-description {
+  line-height: 1.6;
+  color: #555;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  background: #f5f5f5;
+  border-color: #0090cc;
+  color: #0090cc;
+}
+
+.btn-primary {
+  background: #0090cc;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+  font-weight: 500;
+}
+
+.btn-primary:hover {
+  background: #0077b3;
+}
+
+/* Episodes Section */
+.episodes-section {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.episodes-section h2 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.episodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.episode-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  transition: all 0.3s;
+  background: #fafafa;
+}
+
+.episode-item:hover {
+  background: #f0f8ff;
+  border-color: #0090cc;
+  transform: translateX(5px);
+}
+
+.episode-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.episode-number {
+  font-weight: bold;
+  color: #0090cc;
+  min-width: 90px;
+  font-size: 0.9rem;
+}
+
+.episode-title {
+  flex: 1;
+  color: #333;
+  font-weight: 500;
+}
+
+.episode-duration {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.play-episode-btn {
+  background: #0090cc;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.play-episode-btn:hover {
+  background: #0077b3;
+}
+
+/* Recommendations Section */
+.recommendations-section {
+  margin-bottom: 30px;
+}
+
+.recommendations-section h2 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.film-meta {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 8px;
+  font-size: 0.75rem;
+  color: #666;
+  background: #f8f9fa;
+  border-top: 1px solid #eee;
+}
+
+/* Comments Section */
+.comments-section {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.comments-section h2 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.comment-form {
+  margin-bottom: 20px;
+}
+
+.comment-form textarea {
+  width: 100%;
+  height: 100px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+  font-family: inherit;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
+}
+
+.comment-form textarea:focus {
+  outline: none;
+  border-color: #0090cc;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment-item {
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #fafafa;
+  transition: border-color 0.3s;
+}
+
+.comment-item:hover {
+  border-color: #ddd;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #eee;
+}
+
+.username {
+  font-weight: bold;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.comment-rating {
+  color: #ffc107;
+  font-size: 0.9rem;
+}
+
+.comment-text {
+  line-height: 1.5;
+  color: #555;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.comment-date {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.no-episodes,
+.no-comments {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #ddd;
+}
+
+/* Film Container untuk Recommendations */
+.film-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.film-card {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.film-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.thumbnail-container {
+  width: 100%;
+  position: relative;
+  padding-top: 177.78%; /* 9:16 Aspect Ratio */
+  overflow: hidden;
+}
+
+.thumbnail-container img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.film-card:hover .thumbnail-container img {
+  transform: scale(1.05);
+}
+
+.film-card h4 {
+  padding: 8px 4px;
+  font-size: 0.75rem;
+  color: #333;
+  line-height: 1.2;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+/* Responsive Design untuk Halaman Film */
+@media (max-width: 768px) {
+  .film-detail-container {
+    padding: 15px;
+  }
+  
+  .video-meta {
+    flex-direction: row;
+    gap: 8px;
+  }
+  
+  .video-meta span {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+  }
+  
+  .episode-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px;
+  }
+  
+  .episode-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    width: 100%;
+  }
+  
+  .episode-number {
+    min-width: auto;
+  }
+  
+  .play-episode-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .custom-controls {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+  
+  .progress-container {
+    order: 1;
+    flex-basis: 100%;
+    margin-top: 8px;
+  }
+  
+  .film-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  
+  .film-card h4 {
+    font-size: 0.7rem;
+    padding: 6px 3px;
+    min-height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .film-detail-container {
+    padding: 10px;
+  }
+  
+  .film-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .film-card {
+    border-radius: 6px;
+  }
+  
+  .film-card h4 {
+    font-size: 0.65rem;
+    padding: 5px 2px;
+    min-height: 30px;
+  }
+  
+  .action-buttons {
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  .action-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
+  
+  .comment-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .video-info h1 {
+    font-size: 1.3rem;
+  }
+  
+  .video-info {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 360px) {
+  .film-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  
+  .film-card h4 {
+    font-size: 0.6rem;
+    padding: 4px 2px;
+    min-height: 28px;
+  }
+  
+  .video-meta span {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+  }
+}

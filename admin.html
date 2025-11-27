@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Dunia Kultivator</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+  <!-- ===== NAVIGASI ===== -->
+  <header class="navbar">
+    <h1 class="logo">🌏 Dunia Kultivator - Admin</h1>
+    <nav>
+      <a href="index.html">Donghua</a>
+      <a href="spoiler.html">Spoiler</a>
+      <a href="admin.html" class="active">Admin</a>
+      <a href="#" onclick="logout()" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </nav>
+  </header>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="admin-container">
+    <div class="admin-header">
+      <h1>Panel Admin</h1>
+      <p>Kelola konten donghua, episode, dan spoiler</p>
+      <div class="admin-info">
+        <span id="adminEmail"></span>
+      </div>
+    </div>
+
+    <!-- Debug Tools -->
+    <div class="debug-tools">
+      <button onclick="testConnection()" class="btn-secondary">
+        <i class="fas fa-wrench"></i> Test Koneksi
+      </button>
+      <button onclick="testAddFilm()" class="btn-secondary">
+        <i class="fas fa-vial"></i> Test Tambah Film
+      </button>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="admin-tabs">
+      <button class="tab-btn active" data-tab="film">Tambah Donghua</button>
+      <button class="tab-btn" data-tab="episode">Tambah Episode</button>
+      <button class="tab-btn" data-tab="spoiler">Tambah Spoiler</button>
+      <button class="tab-btn" data-tab="manage">Kelola Konten</button>
+    </div>
+
+    <!-- Film Form -->
+    <div id="film-tab" class="tab-content active">
+      <form id="filmForm" class="admin-form">
+        <h2 id="filmFormTitle">Tambah Donghua Baru</h2>
+        
+        <input type="hidden" id="filmId" name="id">
+        
+        <div class="form-group">
+          <label for="filmTitle">Judul Donghua *</label>
+          <input type="text" id="filmTitle" name="title" required minlength="2" maxlength="255">
+        </div>
+
+        <div class="form-group">
+          <label for="filmDescription">Deskripsi</label>
+          <textarea id="filmDescription" name="description" rows="4"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="filmImageUrl">URL Thumbnail (9:16) *</label>
+            <input type="url" id="filmImageUrl" name="image_url" required 
+                   placeholder="https://example.com/image.jpg">
+            <small class="form-help">Pastikan URL gambar valid dan accessible</small>
+          </div>
+
+          <div class="form-group">
+            <label for="filmVideoUrl">URL Video Trailer *</label>
+            <input type="url" id="filmVideoUrl" name="video_url" required 
+                   placeholder="https://example.com/video.mp4">
+            <small class="form-help">Pastikan URL video valid dan accessible</small>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="filmDuration">Durasi (menit)</label>
+            <input type="number" id="filmDuration" name="duration" min="1">
+          </div>
+
+          <div class="form-group">
+            <label for="filmTotalEpisodes">Total Episode</label>
+            <input type="number" id="filmTotalEpisodes" name="total_episodes" min="1" value="1">
+          </div>
+
+          <div class="form-group">
+            <label for="filmReleaseYear">Tahun Rilis</label>
+            <input type="number" id="filmReleaseYear" name="release_year" min="1900" max="2030">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="filmGenre">Genre (pisahkan dengan koma)</label>
+          <input type="text" id="filmGenre" name="genre" placeholder="Action, Adventure, Fantasy">
+        </div>
+
+        <div class="form-group">
+          <label for="filmStatus">Status</label>
+          <select id="filmStatus" name="status">
+            <option value="Ongoing">Ongoing</option>
+            <option value="Completed">Completed</option>
+            <option value="Upcoming">Upcoming</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="filmSubmitBtn">
+            <i class="fas fa-plus"></i> Tambah Donghua
+          </button>
+          <button type="button" class="btn-secondary" id="filmCancelBtn" style="display: none;">
+            <i class="fas fa-times"></i> Batal Edit
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Episode Form -->
+    <div id="episode-tab" class="tab-content">
+      <form id="episodeForm" class="admin-form">
+        <h2 id="episodeFormTitle">Tambah Episode Baru</h2>
+        
+        <input type="hidden" id="episodeId" name="id">
+        
+        <div class="form-group">
+          <label for="episodeFilm">Pilih Donghua *</label>
+          <select id="episodeFilm" name="film_id" required>
+            <option value="">Pilih Donghua...</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="episodeNumber">Nomor Episode *</label>
+            <input type="number" id="episodeNumber" name="episode_number" min="1" required>
+          </div>
+
+          <div class="form-group">
+            <label for="episodeDuration">Durasi (detik)</label>
+            <input type="number" id="episodeDuration" name="duration" min="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="episodeTitle">Judul Episode *</label>
+          <input type="text" id="episodeTitle" name="title" required>
+        </div>
+
+        <div class="form-group">
+          <label for="episodeVideoUrl">URL Video Episode *</label>
+          <input type="url" id="episodeVideoUrl" name="video_url" required 
+                 placeholder="https://example.com/video.mp4">
+          <small class="form-help">Pastikan URL video valid dan accessible</small>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="episodeIsFree" name="is_free" checked>
+            <span class="checkmark"></span>
+            Episode Gratis
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="episodeSubmitBtn">
+            <i class="fas fa-plus"></i> Tambah Episode
+          </button>
+          <button type="button" class="btn-secondary" id="episodeCancelBtn" style="display: none;">
+            <i class="fas fa-times"></i> Batal Edit
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Spoiler Form -->
+    <div id="spoiler-tab" class="tab-content">
+      <form id="spoilerForm" class="admin-form">
+        <h2 id="spoilerFormTitle">Tambah Spoiler/Preview</h2>
+        
+        <input type="hidden" id="spoilerId" name="id">
+        
+        <div class="form-group">
+          <label for="spoilerFilm">Pilih Donghua *</label>
+          <select id="spoilerFilm" name="film_id" required>
+            <option value="">Pilih Donghua...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="spoilerTitle">Judul Spoiler *</label>
+          <input type="text" id="spoilerTitle" name="title" required>
+        </div>
+
+        <div class="form-group">
+          <label for="spoilerVideoUrl">URL Video Spoiler *</label>
+          <input type="url" id="spoilerVideoUrl" name="video_url" required 
+                 placeholder="https://example.com/video.mp4">
+          <small class="form-help">Pastikan URL video valid dan accessible</small>
+        </div>
+
+        <div class="form-group">
+          <label for="spoilerDuration">Durasi (detik)</label>
+          <input type="number" id="spoilerDuration" name="duration" min="1">
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="spoilerSubmitBtn">
+            <i class="fas fa-plus"></i> Tambah Spoiler
+          </button>
+          <button type="button" class="btn-secondary" id="spoilerCancelBtn" style="display: none;">
+            <i class="fas fa-times"></i> Batal Edit
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Manage Content -->
+    <div id="manage-tab" class="tab-content">
+      <div class="manage-section">
+        <h2>Kelola Konten</h2>
+        
+        <div class="manage-tabs">
+          <button class="manage-tab-btn active" data-manage="films">Donghua</button>
+          <button class="manage-tab-btn" data-manage="episodes">Episode</button>
+          <button class="manage-tab-btn" data-manage="spoilers">Spoiler</button>
+        </div>
+
+        <!-- Films Management -->
+        <div id="films-manage" class="manage-content active">
+          <div class="content-header">
+            <h3>Daftar Donghua</h3>
+            <button id="refreshFilms" class="btn-secondary">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+          <div id="filmsList" class="content-list">
+            <!-- Films will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Episodes Management -->
+        <div id="episodes-manage" class="manage-content">
+          <div class="content-header">
+            <h3>Daftar Episode</h3>
+            <button id="refreshEpisodes" class="btn-secondary">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+          <div id="episodesList" class="content-list">
+            <!-- Episodes will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Spoilers Management -->
+        <div id="spoilers-manage" class="manage-content">
+          <div class="content-header">
+            <h3>Daftar Spoiler</h3>
+            <button id="refreshSpoilers" class="btn-secondary">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+          <div id="spoilersList" class="content-list">
+            <!-- Spoilers will be loaded here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <p>© 2025 Dunia Kultivator. Panel Admin</p>
+  </footer>
+
+  <!-- ===== SCRIPT JS ===== -->
+  <script src="admin.js"></script>
+</body>
+</html>

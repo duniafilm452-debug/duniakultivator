@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dunia Kultivator</title>
+
+  <!-- ===== STYLE CSS ===== -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- ===== SUPABASE JS SDK ===== -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <!-- ===== NAVIGASI ===== -->
+  <header class="navbar">
+    <h1 class="logo">🌏 Dunia Kultivator</h1>
+    <nav>
+      <a href="#" class="active">Donghua</a>
+      <a href="spoiler.html">Spoiler</a>
+    </nav>
+  </header>
+
+  <!-- ===== FITUR PENCARIAN ===== -->
+  <section class="search-section">
+    <input type="text" id="searchInput" placeholder="Cari donghua..." />
+    <div class="nav-buttons">
+      <button class="nav-btn" data-target="untukmu">Untukmu</button>
+      <button class="nav-btn active" data-target="terbaru">Terbaru</button>
+    </div>
+  </section>
+
+  <!-- ===== DAFTAR DONGHUA ===== -->
+  <main class="film-section">
+    <h2 id="sectionTitle">Terbaru</h2>
+    <div id="filmContainer" class="film-container">
+      <!-- Donghua akan dimuat otomatis lewat script.js -->
+    </div>
+    
+    <!-- PAGINATION -->
+    <div class="pagination">
+      <button id="prevBtn" class="pagination-btn">Sebelumnya</button>
+      <span id="pageInfo" class="page-info">Halaman 1</span>
+      <button id="nextBtn" class="pagination-btn">Selanjutnya</button>
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <p>© 2025 Dunia Kultivator. Semua Hak Dilindungi.</p>
+  </footer>
+
+  <!-- ===== SCRIPT JS ===== -->
+  <script src="script.js"></script>
+</body>
+</html>
