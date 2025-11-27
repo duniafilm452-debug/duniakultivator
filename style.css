@@ -215,6 +215,18 @@ footer {
 }
 
 /* === RESPONSIVE DESIGN === */
+/* Tambahkan di bagian responsive style.css */
+
+/* Untuk halaman spoiler */
+body.spoiler-page {
+  background: #000;
+}
+
+/* Sembunyikan footer di halaman spoiler */
+body:has(.spoiler-feed) footer {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .film-container {
     grid-template-columns: repeat(3, 1fr);

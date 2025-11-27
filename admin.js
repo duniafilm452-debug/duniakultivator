@@ -470,6 +470,7 @@ async function handleSpoilerSubmit(e) {
     const spoilerData = {
       film_id: parseInt(formData.get('film_id')),
       title: formData.get('title').trim(),
+      description: formData.get('description')?.trim() || '',
       video_url: formData.get('video_url').trim(),
       duration: formData.get('duration') ? parseInt(formData.get('duration')) : null
     };
@@ -499,6 +500,8 @@ async function handleSpoilerSubmit(e) {
     } else {
       // Insert new spoiler
       spoilerData.views = 0;
+      spoilerData.likes = 0;
+      spoilerData.comments = 0;
 
       const { data, error } = await supabase
         .from('spoiler')
@@ -578,6 +581,7 @@ function editSpoiler(spoiler) {
   document.getElementById('spoilerId').value = spoiler.id;
   document.getElementById('spoilerFilm').value = spoiler.film_id;
   document.getElementById('spoilerTitle').value = spoiler.title;
+  document.getElementById('spoilerDescription').value = spoiler.description || '';
   document.getElementById('spoilerVideoUrl').value = spoiler.video_url;
   document.getElementById('spoilerDuration').value = spoiler.duration || '';
   
@@ -794,6 +798,8 @@ function createSpoilerItem(spoiler) {
         <div class="content-item-meta">
           <span>⏱️ ${spoiler.duration ? formatDuration(spoiler.duration) : '-'}</span>
           <span>👁️ ${spoiler.views || 0} views</span>
+          <span>❤️ ${spoiler.likes || 0} likes</span>
+          <span>💬 ${spoiler.comments || 0} comments</span>
         </div>
       </div>
       <div class="content-item-actions">
@@ -805,6 +811,7 @@ function createSpoilerItem(spoiler) {
         </button>
       </div>
     </div>
+    ${spoiler.description ? `<div class="content-item-description">${spoiler.description}</div>` : ''}
     <div class="content-item-meta">
       <span><strong>URL Video:</strong> ${spoiler.video_url ? '✅' : '❌'}</span>
     </div>
@@ -899,69 +906,5 @@ function isValidUrl(string) {
     return true;
   } catch (_) {
     return false;
-  }
-}
-
-// === SETUP ADMIN USERS (Fungsi untuk setup awal) ===
-async function setupAdminUsers() {
-  // Fungsi ini hanya dijalankan sekali untuk setup admin users
-  // Anda perlu menjalankan fungsi ini dari console browser setelah membuat tabel
-  
-  const adminUsers = [
-    {
-      email: "admin@duniakultivator.com",
-      password: "Admin123!",
-      name: "Super Administrator"
-    },
-    {
-      email: "administrator@duniakultivator.com", 
-      password: "Admin456!",
-      name: "Administrator"
-    }
-  ];
-
-  for (const admin of adminUsers) {
-    try {
-      // Daftarkan user baru
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: admin.email,
-        password: admin.password,
-        options: {
-          data: {
-            name: admin.name,
-            role: 'admin'
-          }
-        }
-      });
-
-      if (authError) {
-        if (authError.message.includes('User already registered')) {
-          console.log(`User ${admin.email} sudah terdaftar`);
-          continue;
-        }
-        throw authError;
-      }
-
-      if (authData.user) {
-        // Tambahkan ke tabel admin_users
-        const { error: adminError } = await supabase
-          .from('admin_users')
-          .insert({
-            user_id: authData.user.id,
-            email: admin.email,
-            name: admin.name,
-            role: 'super_admin',
-            is_active: true
-          });
-
-        if (adminError) {
-          console.error(`Error adding ${admin.email} to admin_users:`, adminError);
-        } else {
-          console.log(`Admin user ${admin.email} berhasil dibuat`);
-        }
-      }
-    } catch (error) {
-      console.error(`Error setting up admin user ${admin.email}:`, error);
-    }
   }
 }
