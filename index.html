@@ -16,6 +16,28 @@
   
   <!-- ===== FONT AWESOME ===== -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- ===== IKLAN VIDEO SLIDER (DELAY + INTERVAL) ===== -->
+  <script>
+    function loadVideoSliderAds() {
+      (function(wnq){
+        var d = document,
+            s = d.createElement('script'),
+            l = d.scripts[d.scripts.length - 1];
+        s.settings = wnq || {};
+        s.src = "//dead-hour.com/b.XIVlsjdTGrlh0mY/WZcS/Ye/mS9/uTZKUTl-kUPoTHYU3IMqTlYx0ANKz_QSt_NCjGcKxANSjzQ/3uNIQN";
+        s.async = true;
+        s.referrerPolicy = 'no-referrer-when-downgrade';
+        l.parentNode.insertBefore(s, l);
+      })({});
+    }
+
+    // Muncul pertama kali setelah 3 detik
+    setTimeout(loadVideoSliderAds, 3000);
+
+    // Muncul lagi setiap 3–5 menit
+    setInterval(loadVideoSliderAds, (Math.floor(Math.random() * 2) + 3) * 60000);
+  </script>
 </head>
 
 <body>
