@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Obrolan Group - Dunia Kultivator</title>
+
+  <!-- ===== STYLE CSS ===== -->
+  <link rel="stylesheet" href="chat.css" />
+
+  <!-- ===== SUPABASE JS SDK ===== -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- ===== FONT AWESOME ===== -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+  <!-- ===== HEADER CHAT ===== -->
+  <header class="chat-header">
+    <div class="header-content">
+      <a href="index.html" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <div class="chat-info">
+        <h1>Obrolan Group</h1>
+        <span class="online-count">🟢 <span id="onlineCount">0</span> online</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="infoBtn">
+          <i class="fas fa-info-circle"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== CONTAINER CHAT ===== -->
+  <main class="chat-container">
+    <!-- ===== AREA PESAN ===== -->
+    <div class="messages-area" id="messagesArea">
+      <!-- Pesan akan dimuat otomatis dari database -->
+    </div>
+
+    <!-- ===== INPUT PESAN ===== -->
+    <div class="message-input-container">
+      <div class="message-limit-info" id="messageLimitInfo">
+        <span id="messageCount">0/50 pesan hari ini</span>
+      </div>
+      <div class="input-wrapper">
+        <input type="text" id="messageInput" placeholder="Ketik pesan..." maxlength="500">
+        <button class="send-btn" id="sendBtn">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+      <div class="input-features">
+        <span class="char-count" id="charCount">0/500</span>
+        <span class="ip-info" id="ipInfo">IP: ...</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== INFO MODAL ===== -->
+  <div class="modal" id="infoModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Info Obrolan Group</h3>
+        <button class="close-modal" id="closeInfo">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="info-item">
+          <i class="fas fa-shield-alt"></i>
+          <div class="info-content">
+            <strong>Keamanan & Privasi</strong>
+            <p>Setiap pengguna dibatasi 50 pesan per hari untuk mencegah spam</p>
+          </div>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-clock"></i>
+          <div class="info-content">
+            <strong>Auto Delete</strong>
+            <p>Pesan akan otomatis terhapus setelah 24 jam</p>
+          </div>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-user"></i>
+          <div class="info-content">
+            <strong>Anonim</strong>
+            <p>Pengguna anonim dengan batasan 1 user per IP address</p>
+          </div>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-rules"></i>
+          <div class="info-content">
+            <strong>Aturan</strong>
+            <p>Jaga sopan santun dan hindari konten tidak pantas</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCRIPT JS ===== -->
+  <script src="chat.js"></script>
+</body>
+</html>
