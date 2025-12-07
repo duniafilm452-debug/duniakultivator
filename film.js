@@ -22,6 +22,7 @@ const recommendationsContainer = document.getElementById('recommendationsContain
 const commentsList = document.getElementById('commentsList');
 const commentInput = document.getElementById('commentInput');
 const submitComment = document.getElementById('submitComment');
+const scrollIndicator = document.getElementById('episodesScrollIndicator');
 
 // Action Buttons
 const likeBtn = document.getElementById('likeBtn');
@@ -36,6 +37,15 @@ let currentEpisodeData = null;
 let isPlaying = false;
 let isLiked = false;
 let isFavorited = false;
+let allEpisodes = [];
+const INITIAL_EPISODES_TO_SHOW = 3;
+
+// SMARTLINK controller state
+let smartlinkShown = false;     // ensure popup only once per page
+let smartlinkCooldown = false;  // short cooldown to avoid double-fire
+
+// SMARTLINK URL (from global window var set in HTML)
+const SMARTLINK_URL = (window.SMARTLINK_URL) ? window.SMARTLINK_URL : "https://www.effectivegatecpm.com/q8gtyrietf?key=be139c3d3cc1d6f25743f0a3140c618e";
 
 // === LOAD FILM DETAIL SAAT PAGE LOAD ===
 document.addEventListener('DOMContentLoaded', async () => {
@@ -55,19 +65,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadRecommendations();
   await loadComments(currentFilmId);
 
-  // Set video untuk auto play
+  // Setup autoplay dengan muted terlebih dahulu
   videoPlayer.autoplay = true;
-  videoPlayer.muted = true; // Auto play biasanya membutuhkan muted
+  videoPlayer.muted = true;
+  videoPlayer.playsinline = true;
 
-  // Handle episode parameter - jika "latest" maka mainkan episode terbaru
+  // Handle episode parameter
   if (episodeParam === 'latest') {
     await playLatestEpisode();
   } else if (episodeParam) {
     await playEpisode(episodeParam);
+  } else {
+    // Jika tidak ada parameter episode, mainkan episode terbaru
+    await playLatestEpisode();
   }
 
   // Setup event listeners
   setupEventListeners();
+
+  // Setup Smartlink triggers (global)
+  setupGlobalSmartlinkTriggers();
 });
 
 // === LOAD DETAIL FILM ===
@@ -106,66 +123,101 @@ async function loadEpisodes(filmId) {
     .from('episode')
     .select('*')
     .eq('film_id', filmId)
-    .order('episode_number', { ascending: true });
+    .order('episode_number', { ascending: false }); // Urut dari episode terbaru
 
   if (error) {
     console.error('Error loading episodes:', error);
     return;
   }
 
+  allEpisodes = episodes;
   episodesList.innerHTML = '';
 
-  if (episodes.length === 0) {
+  if (!episodes || episodes.length === 0) {
     episodesList.innerHTML = '<p class="no-episodes">Belum ada episode.</p>';
+    scrollIndicator.style.display = 'none';
     return;
   }
 
-  episodes.forEach(episode => {
-    const episodeElement = document.createElement('div');
-    episodeElement.className = 'episode-item';
-    episodeElement.innerHTML = `
-      <div class="episode-info">
-        <span class="episode-number">Episode ${episode.episode_number}</span>
-        <span class="episode-title">${episode.title}</span>
-        <span class="episode-duration">${formatDuration(episode.duration)}</span>
-      </div>
-      <button class="play-episode-btn" data-episode-id="${episode.id}">
-        <i class="fas fa-play"></i> Putar
-      </button>
-    `;
+  // Tampilkan 3 episode pertama (terbaru)
+  const episodesToShow = episodes.slice(0, INITIAL_EPISODES_TO_SHOW);
+  
+  episodesToShow.forEach(episode => {
+    const episodeElement = createEpisodeElement(episode, false);
     episodesList.appendChild(episodeElement);
   });
 
-  // Add event listeners to episode buttons
-  document.querySelectorAll('.play-episode-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const episodeId = e.target.closest('.play-episode-btn').dataset.episodeId;
-      await playEpisode(episodeId);
+  // Jika ada lebih dari 3 episode, tampilkan sisanya
+  if (episodes.length > INITIAL_EPISODES_TO_SHOW) {
+    const remainingEpisodes = episodes.slice(INITIAL_EPISODES_TO_SHOW);
+    
+    remainingEpisodes.forEach(episode => {
+      const episodeElement = createEpisodeElement(episode, true);
+      episodesList.appendChild(episodeElement);
     });
-  });
+
+    // Tampilkan scroll indicator
+    scrollIndicator.style.display = 'block';
+  } else {
+    scrollIndicator.style.display = 'none';
+  }
 }
 
-// === PLAY LATEST EPISODE (FUNGSI BARU) ===
-async function playLatestEpisode() {
-  const { data: latestEpisode, error } = await supabase
-    .from('episode')
-    .select('*')
-    .eq('film_id', currentFilmId)
-    .order('episode_number', { ascending: false })
-    .limit(1)
-    .single();
+// === CREATE EPISODE ELEMENT ===
+function createEpisodeElement(episode, isHidden = false) {
+  const episodeElement = document.createElement('div');
+  episodeElement.className = `episode-item ${isHidden ? 'hidden-episode' : ''}`;
+  episodeElement.dataset.episodeId = episode.id;
+  
+  if (isHidden) {
+    episodeElement.style.display = 'none';
+  }
+  
+  episodeElement.innerHTML = `
+    <div class="episode-info">
+      <span class="episode-number">Episode ${episode.episode_number}</span>
+      <span class="episode-title-text">${episode.title}</span>
+      <div class="episode-meta">
+        <span class="episode-duration">${formatDuration(episode.duration)}</span>
+        <span class="episode-release">${formatReleaseDate(episode.release_date)}</span>
+      </div>
+    </div>
+  `;
+  
+  // Add click event untuk memutar episode
+  episodeElement.addEventListener('click', async (ev) => {
+    // show smartlink (any episode click triggers)
+    triggerSmartlinkFromEvent(ev);
+    await playEpisode(episode.id);
+    updateActiveEpisode();
+  });
+  
+  return episodeElement;
+}
 
-  if (error) {
-    console.error('Error loading latest episode:', error);
+// === PLAY LATEST EPISODE ===
+async function playLatestEpisode() {
+  if (!allEpisodes || allEpisodes.length === 0) {
     // Fallback ke trailer jika tidak ada episode
-    if (currentFilmData.video_url) {
+    if (currentFilmData && currentFilmData.video_url) {
       videoSource.src = getCloudflareR2Url(currentFilmData.video_url);
       videoPlayer.load();
       episodeTitle.textContent = "Trailer";
+      
+      // Unmute dan play otomatis
+      videoPlayer.muted = false;
+      try {
+        await videoPlayer.play();
+        isPlaying = true;
+      } catch (err) {
+        console.log('Autoplay blocked:', err);
+      }
     }
     return;
   }
 
+  // Ambil episode terbaru (nomor tertinggi)
+  const latestEpisode = allEpisodes[0];
   await playEpisode(latestEpisode.id);
 }
 
@@ -190,31 +242,80 @@ async function playEpisode(episodeId) {
   videoSource.src = videoUrl;
   videoPlayer.load();
   
-  // Set autoplay dan unmute setelah user interaction
+  // Unmute dan play otomatis
   videoPlayer.muted = false;
+  
+  try {
+    await videoPlayer.play();
+    isPlaying = true;
+  } catch (err) {
+    console.log('Autoplay blocked:', err);
+    // Fallback: user harus klik manual
+  }
   
   // Update episode title
   episodeTitle.textContent = `Episode ${episode.episode_number}: ${episode.title}`;
 
-  // Update episode views
-  await supabase
+  // Update episode views (best-effort, avoid blocking UI)
+  supabase
     .from('episode')
     .update({ views: episode.views + 1 })
-    .eq('id', episodeId);
+    .eq('id', episodeId)
+    .then(() => {})
+    .catch(e => console.error('Failed to update episode views', e));
+
+  // Update film views
+  if (currentFilmData) {
+    supabase
+      .from('film')
+      .update({ total_views: currentFilmData.total_views + 1 })
+      .eq('id', currentFilmId)
+      .then(() => {})
+      .catch(e => console.error('Failed to update film views', e));
+  }
+
+  // Reload film data for UI consistency (non-blocking)
+  loadFilmDetail(currentFilmId).catch(()=>{});
 
   // Update watch history
-  await updateWatchHistory(currentFilmId, episodeId);
+  updateWatchHistory(currentFilmId, episodeId).catch(()=>{});
+
+  // Update active episode
+  updateActiveEpisode();
+}
+
+// === UPDATE ACTIVE EPISODE ===
+function updateActiveEpisode() {
+  // Hapus class active dari semua episode
+  document.querySelectorAll('.episode-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  // Tambah class active ke episode yang sedang diputar
+  const activeEpisode = document.querySelector(`.episode-item[data-episode-id="${currentEpisodeId}"]`);
+  if (activeEpisode) {
+    activeEpisode.classList.add('active');
+    
+    // Tampilkan semua episode jika tersembunyi
+    if (activeEpisode.style.display === 'none') {
+      document.querySelectorAll('.episode-item').forEach(item => {
+        item.style.display = 'flex';
+      });
+    }
+    
+    // Scroll ke episode yang aktif
+    activeEpisode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 // === CLOUDFLARE R2 URL HELPER ===
 function getCloudflareR2Url(filePath) {
   // Jika sudah full URL, return langsung
+  if (!filePath) return '';
   if (filePath.startsWith('http')) {
     return filePath;
   }
   
-  // Jika relative path, gabungkan dengan base URL Cloudflare R2
-  // Hapus leading slash jika ada
   const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
   return `${CLOUDFLARE_R2_BASE_URL}/${cleanPath}`;
 }
@@ -250,6 +351,11 @@ async function loadRecommendations() {
         </div>
       </a>
     `;
+    // Ensure clicking recommendation triggers smartlink (and then navigation naturally occurs via anchor)
+    card.addEventListener('click', (ev) => {
+      triggerSmartlinkFromEvent(ev);
+      // Let the default navigation happen (anchor inside)
+    });
     recommendationsContainer.appendChild(card);
   });
 }
@@ -275,7 +381,7 @@ async function loadComments(filmId) {
 
   commentsList.innerHTML = '';
 
-  if (comments.length === 0) {
+  if (!comments || comments.length === 0) {
     commentsList.innerHTML = '<p class="no-comments">Belum ada komentar. Jadilah yang pertama berkomentar!</p>';
     return;
   }
@@ -302,41 +408,43 @@ async function loadComments(filmId) {
 }
 
 // === SUBMIT COMMENT ===
-submitComment.addEventListener('click', async () => {
-  const commentText = commentInput.value.trim();
-  
-  if (!commentText) {
-    alert('Silakan tulis komentar terlebih dahulu!');
-    return;
-  }
+if (submitComment) {
+  submitComment.addEventListener('click', async () => {
+    const commentText = commentInput.value.trim();
+    
+    if (!commentText) {
+      alert('Silakan tulis komentar terlebih dahulu!');
+      return;
+    }
 
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    alert('Silakan login terlebih dahulu untuk berkomentar!');
-    return;
-  }
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      alert('Silakan login terlebih dahulu untuk berkomentar!');
+      return;
+    }
 
-  const { error } = await supabase
-    .from('reviews')
-    .insert({
-      user_id: user.id,
-      film_id: currentFilmId,
-      rating: 5, // Default rating, bisa dikembangkan jadi input bintang
-      comment: commentText
-    });
+    const { error } = await supabase
+      .from('reviews')
+      .insert({
+        user_id: user.id,
+        film_id: currentFilmId,
+        rating: 5, // Default rating, bisa dikembangkan jadi input bintang
+        comment: commentText
+      });
 
-  if (error) {
-    console.error('Error submitting comment:', error);
-    alert('Gagal mengirim komentar!');
-    return;
-  }
+    if (error) {
+      console.error('Error submitting comment:', error);
+      alert('Gagal mengirim komentar!');
+      return;
+    }
 
-  // Clear input dan reload comments
-  commentInput.value = '';
-  await loadComments(currentFilmId);
-  alert('Komentar berhasil dikirim!');
-});
+    // Clear input dan reload comments
+    commentInput.value = '';
+    await loadComments(currentFilmId);
+    alert('Komentar berhasil dikirim!');
+  });
+}
 
 // === CHECK USER INTERACTION (LIKE/FAVORITE) ===
 async function checkUserInteraction() {
@@ -368,82 +476,91 @@ async function checkUserInteraction() {
 }
 
 // === LIKE/FAVORITE HANDLERS ===
-likeBtn.addEventListener('click', async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    alert('Silakan login terlebih dahulu!');
-    return;
-  }
+if (likeBtn) {
+  likeBtn.addEventListener('click', async (ev) => {
+    triggerSmartlinkFromEvent(ev); // trigger smartlink when clicking like
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      alert('Silakan login terlebih dahulu!');
+      return;
+    }
 
-  if (isLiked) {
-    // Unlike
-    await supabase
-      .from('reviews')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('film_id', currentFilmId);
-  } else {
-    // Like
-    await supabase
-      .from('reviews')
-      .insert({
-        user_id: user.id,
-        film_id: currentFilmId,
-        rating: 5
-      });
-  }
+    if (isLiked) {
+      // Unlike
+      await supabase
+        .from('reviews')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('film_id', currentFilmId);
+    } else {
+      // Like
+      await supabase
+        .from('reviews')
+        .insert({
+          user_id: user.id,
+          film_id: currentFilmId,
+          rating: 5
+        });
+    }
 
-  isLiked = !isLiked;
-  updateLikeButton();
-});
+    isLiked = !isLiked;
+    updateLikeButton();
+  });
+}
 
-favoriteBtn.addEventListener('click', async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    alert('Silakan login terlebih dahulu!');
-    return;
-  }
+if (favoriteBtn) {
+  favoriteBtn.addEventListener('click', async (ev) => {
+    triggerSmartlinkFromEvent(ev); // trigger smartlink when clicking favorite
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      alert('Silakan login terlebih dahulu!');
+      return;
+    }
 
-  if (isFavorited) {
-    // Remove from favorites
-    await supabase
-      .from('favorites')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('film_id', currentFilmId);
-  } else {
-    // Add to favorites
-    await supabase
-      .from('favorites')
-      .insert({
-        user_id: user.id,
-        film_id: currentFilmId
-      });
-  }
+    if (isFavorited) {
+      // Remove from favorites
+      await supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('film_id', currentFilmId);
+    } else {
+      // Add to favorites
+      await supabase
+        .from('favorites')
+        .insert({
+          user_id: user.id,
+          film_id: currentFilmId
+        });
+    }
 
-  isFavorited = !isFavorited;
-  updateFavoriteButton();
-});
+    isFavorited = !isFavorited;
+    updateFavoriteButton();
+  });
+}
 
 // === SHARE HANDLER ===
-shareBtn.addEventListener('click', () => {
-  const shareUrl = window.location.href;
-  const shareText = `Tonton "${currentFilmData?.title}" di Dunia Kultivator!`;
-  
-  if (navigator.share) {
-    navigator.share({
-      title: currentFilmData?.title,
-      text: shareText,
-      url: shareUrl
-    });
-  } else {
-    // Fallback untuk browser yang tidak support Web Share API
-    navigator.clipboard.writeText(shareUrl);
-    alert('Link berhasil disalin ke clipboard!');
-  }
-});
+if (shareBtn) {
+  shareBtn.addEventListener('click', (ev) => {
+    triggerSmartlinkFromEvent(ev); // trigger smartlink on share click
+    const shareUrl = window.location.href;
+    const shareText = `Tonton "${currentFilmData?.title}" di Dunia Kultivator!`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: currentFilmData?.title,
+        text: shareText,
+        url: shareUrl
+      });
+    } else {
+      // Fallback untuk browser yang tidak support Web Share API
+      navigator.clipboard.writeText(shareUrl);
+      alert('Link berhasil disalin ke clipboard!');
+    }
+  });
+}
 
 // === UPDATE WATCH HISTORY ===
 async function updateWatchHistory(filmId, episodeId = null) {
@@ -472,11 +589,32 @@ function formatTime(seconds) {
 }
 
 function formatDuration(seconds) {
+  if (!seconds && seconds !== 0) return 'N/A';
   const mins = Math.floor(seconds / 60);
   return `${mins} min`;
 }
 
+function formatReleaseDate(dateString) {
+  if (!dateString) return 'TBA';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffTime = Math.abs(now - date);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays <= 7) {
+    if (diffDays === 0) return 'Hari ini';
+    if (diffDays === 1) return 'Kemarin';
+    return `${diffDays} hari lalu`;
+  }
+  
+  return date.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short'
+  });
+}
+
 function formatDate(dateString) {
+  if (!dateString) return '';
   return new Date(dateString).toLocaleDateString('id-ID');
 }
 
@@ -489,6 +627,7 @@ function generateStarRating(rating) {
 }
 
 function updateLikeButton() {
+  if (!likeBtn) return;
   const icon = likeBtn.querySelector('i');
   if (isLiked) {
     icon.className = 'fas fa-thumbs-up';
@@ -500,6 +639,7 @@ function updateLikeButton() {
 }
 
 function updateFavoriteButton() {
+  if (!favoriteBtn) return;
   const icon = favoriteBtn.querySelector('i');
   if (isFavorited) {
     icon.className = 'fas fa-bookmark';
@@ -510,6 +650,7 @@ function updateFavoriteButton() {
   }
 }
 
+// === SETUP GENERAL EVENT LISTENERS ===
 function setupEventListeners() {
   // Auto-save progress every 10 seconds
   setInterval(() => {
@@ -526,4 +667,164 @@ function setupEventListeners() {
   videoPlayer.addEventListener('pause', () => {
     isPlaying = false;
   });
+  
+  // Handle autoplay with user interaction
+  document.addEventListener('click', () => {
+    if (videoPlayer.paused && !isPlaying) {
+      videoPlayer.play().catch(e => console.log('Play failed:', e));
+    }
+  });
+  
+  // Handle scroll for episodes hidden
+  if (episodesList) {
+    episodesList.addEventListener('scroll', () => {
+      const scrollPosition = episodesList.scrollTop + episodesList.clientHeight;
+      const scrollHeight = episodesList.scrollHeight;
+      
+      // If user scroll to bottom, show all episodes
+      if (scrollPosition >= scrollHeight - 50) {
+        document.querySelectorAll('.episode-item').forEach(item => {
+          item.style.display = 'flex';
+        });
+        scrollIndicator.style.display = 'none';
+      }
+    });
+  }
 }
+
+/* ============================
+   SMARTLINK: CENTRAL HANDLER
+   ============================ */
+
+/**
+ * setupGlobalSmartlinkTriggers
+ * - Triggers smartlink popup for: play event (first play), clicking episodes, clicking recommendation cards,
+ *   and clicking any button (to follow user's request)
+ * - Ensures popup only shown once per page (smartlinkShown)
+ */
+function setupGlobalSmartlinkTriggers() {
+  // Trigger on first user-initiated video play (if not already fired)
+  if (videoPlayer) {
+    videoPlayer.addEventListener('play', () => {
+      triggerSmartlink();
+    }, { once: true });
+  }
+
+  // Clicks inside episodesList are already wired in createEpisodeElement, but ensure any click still triggers
+  if (episodesList) {
+    episodesList.addEventListener('click', () => {
+      triggerSmartlink();
+    });
+  }
+
+  // Clicks inside recommendations container
+  if (recommendationsContainer) {
+    recommendationsContainer.addEventListener('click', () => {
+      triggerSmartlink();
+    });
+  }
+
+  // Any button click on the page triggers smartlink (but we block a few safe exceptions)
+  document.addEventListener('click', (ev) => {
+    const target = ev.target;
+    // If already shown or in cooldown, ignore
+    if (smartlinkShown || smartlinkCooldown) return;
+
+    // Ignore clicks on the smartlink popup itself
+    if (target.closest && target.closest('#smartlink-popup')) return;
+
+    // If target is an actionable button or inside .action-buttons or has role=button or is <button> or .action-btn
+    const isButtonLike = target.tagName === 'BUTTON' ||
+                         target.closest && target.closest('button') ||
+                         target.classList.contains('action-btn') ||
+                         target.closest && target.closest('.action-buttons') ||
+                         target.getAttribute && target.getAttribute('role') === 'button';
+
+    // Avoid triggering on form inputs, anchors used for navigation (let anchor click navigate), or textareas
+    const isFormElement = target.tagName === 'A' || target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest && target.closest('a');
+
+    if (isButtonLike && !isFormElement) {
+      triggerSmartlink();
+    }
+  }, { capture: true });
+}
+
+/**
+ * triggerSmartlinkFromEvent(ev)
+ * - Called inline from event handlers where we want to trigger popup before navigation/action
+ * - Prevents double firing by using cooldown and then allows default action to continue
+ */
+function triggerSmartlinkFromEvent(ev) {
+  // If popup already shown, do nothing
+  if (smartlinkShown) return;
+  if (smartlinkCooldown) return;
+
+  // Start a short cooldown to avoid multiple triggers from same click
+  smartlinkCooldown = true;
+  setTimeout(() => smartlinkCooldown = false, 600);
+
+  // Show popup (no preventDefault unless needed)
+  triggerSmartlink();
+}
+
+/**
+ * triggerSmartlink
+ * - Creates a slide-up popup at bottom center
+ * - Shown only once (smartlinkShown)
+ * - Auto-hide after 12 seconds
+ * - CTA opens SMARTLINK_URL in new tab
+ */
+function triggerSmartlink() {
+  if (smartlinkShown) return;
+  smartlinkShown = true;
+
+  // Create popup container
+  let popup = document.getElementById('smartlink-popup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'smartlink-popup';
+    popup.className = 'mini'; // default mini (CSS handles layout)
+    popup.innerHTML = `
+      <div class="smartlink-card">
+        <div class="smartlink-text">Dapatkan penawaran menarik dari sponsor! Klik untuk melihat.</div>
+        <a class="smartlink-cta" target="_blank" rel="noopener noreferrer" href="${SMARTLINK_URL}">Lihat</a>
+        <button class="smartlink-close" aria-label="Tutup">✕</button>
+      </div>
+    `;
+    document.body.appendChild(popup);
+
+    // Close button
+    popup.querySelector('.smartlink-close').addEventListener('click', () => {
+      hideSmartlinkPopup(popup);
+    });
+
+    // If user clicks CTA, we keep the popup (optional) but still mark shown
+    popup.querySelector('.smartlink-cta').addEventListener('click', () => {
+      // When the CTA is clicked, we do not re-open or re-show later (smartlinkShown keeps true)
+      // Allow new tab to open via target="_blank"
+    });
+  }
+
+  // Show with animation (CSS class)
+  requestAnimationFrame(() => {
+    popup.classList.add('show');
+  });
+
+  // Auto hide after 12s
+  setTimeout(() => {
+    hideSmartlinkPopup(popup);
+  }, 12000);
+}
+
+function hideSmartlinkPopup(popup) {
+  if (!popup) popup = document.getElementById('smartlink-popup');
+  if (!popup) return;
+  popup.classList.remove('show');
+  setTimeout(() => {
+    if (popup && popup.parentNode) popup.parentNode.removeChild(popup);
+  }, 400);
+}
+
+/* ============================
+   END SMARTLINK
+   ============================ */
