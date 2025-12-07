@@ -11,21 +11,6 @@ body {
   color: #222;
 }
 
-/* === IKLAN HEADER === */
-.ad-banner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f8f9fa;
-  padding: 8px 0;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.ad-container {
-  text-align: center;
-  margin: 0 auto;
-}
-
 /* === NAVBAR === */
 .navbar {
   background-color: #222;
@@ -219,6 +204,39 @@ body {
   color: #666;
 }
 
+/* === FLOATING CHAT BUTTON === */
+.floating-chat-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #0090cc, #00bcd4);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 50px;
+  box-shadow: 0 4px 15px rgba(0, 144, 204, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.floating-chat-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 144, 204, 0.6);
+  background: linear-gradient(135deg, #0080b8, #00acc1);
+}
+
+.floating-chat-btn i {
+  font-size: 1.2rem;
+}
+
+.floating-chat-btn span {
+  font-size: 0.9rem;
+}
+
 /* === FOOTER === */
 footer {
   background-color: #222;
@@ -230,8 +248,6 @@ footer {
 }
 
 /* === RESPONSIVE DESIGN === */
-/* Tambahkan di bagian responsive style.css */
-
 /* Untuk halaman spoiler */
 body.spoiler-page {
   background: #000;
@@ -275,6 +291,20 @@ body:has(.spoiler-feed) footer {
   
   .search-section {
     padding: 12px 15px;
+  }
+  
+  .floating-chat-btn {
+    bottom: 15px;
+    right: 15px;
+    padding: 10px 14px;
+  }
+  
+  .floating-chat-btn span {
+    font-size: 0.8rem;
+  }
+  
+  .floating-chat-btn i {
+    font-size: 1.1rem;
   }
 }
 
@@ -325,9 +355,18 @@ body:has(.spoiler-feed) footer {
     font-size: 0.8rem;
   }
   
-  /* Mobile ad adjustments */
-  .ad-banner {
-    padding: 6px 0;
+  .floating-chat-btn {
+    bottom: 10px;
+    right: 10px;
+    padding: 8px 12px;
+  }
+  
+  .floating-chat-btn span {
+    font-size: 0.75rem;
+  }
+  
+  .floating-chat-btn i {
+    font-size: 1rem;
   }
 }
 
@@ -350,7 +389,12 @@ body:has(.spoiler-feed) footer {
     left: 3px;
   }
   
-  .ad-banner {
-    padding: 4px 0;
+  .floating-chat-btn span {
+    display: none; /* Sembunyikan teks di layar sangat kecil */
+  }
+  
+  .floating-chat-btn {
+    padding: 12px;
+    border-radius: 50%;
   }
 }
