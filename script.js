@@ -11,6 +11,7 @@ const sectionTitle = document.querySelector("#sectionTitle");
 const prevBtn = document.querySelector("#prevBtn");
 const nextBtn = document.querySelector("#nextBtn");
 const pageInfo = document.querySelector("#pageInfo");
+const chatButton = document.querySelector("#chatButton");
 
 // === VARIABEL PAGINATION ===
 let currentPage = 1;
@@ -20,17 +21,16 @@ let filteredFilms = [];
 
 // === LOAD FILM SAAT PERTAMA KALI ===
 document.addEventListener("DOMContentLoaded", () => {
-  // Ambil tab terakhir dari localStorage
-  const lastTab = localStorage.getItem("activeTab") || "terbaru";
-
-  // Atur tombol aktif
+  // Default ke tab "terbaru" dan reset localStorage
+  localStorage.setItem("activeTab", "terbaru");
+  
+  // Atur tombol aktif - default terbaru
   document.querySelectorAll(".nav-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.target === lastTab);
+    btn.classList.toggle("active", btn.dataset.target === "terbaru");
   });
 
-  // Muat konten berdasarkan tab terakhir
-  if (lastTab === "untukmu") muatUntukmu();
-  else muatFilmTerbaru();
+  // Muat konten tab terbaru sebagai default
+  muatFilmTerbaru();
 });
 
 // === FITUR: TAB NAV BUTTON (UNTUKMU & TERBARU) ===
@@ -52,56 +52,52 @@ document.querySelectorAll(".nav-btn").forEach(btn => {
   });
 });
 
-// === AMBIL SEMUA FILM DENGAN EPISODE TERBARU ===
-async function ambilSemuaFilm() {
-  // Ambil semua film dengan episode terbaru
-  const { data: films, error } = await supabase
-    .from("film")
+// === AMBIL EPISODE TERBARU DARI SEMUA FILM ===
+async function ambilEpisodeTerbaru() {
+  // Ambil semua episode terbaru dari setiap film, diurutkan berdasarkan created_at terbaru
+  const { data: episodes, error } = await supabase
+    .from("episode")
     .select(`
-      *,
-      episode (
-        episode_number,
-        created_at
+      episode_number,
+      video_url,
+      created_at,
+      film (
+        id,
+        title,
+        image_url,
+        latest_episode
       )
     `)
-    .order("latest_episode", { ascending: false })
-    .order("id", { ascending: false });
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Gagal mengambil data:", error);
+    console.error("Gagal mengambil episode terbaru:", error);
     return [];
   }
 
-  // Untuk setiap film, cari episode terbaru
-  const filmsWithLatestEpisode = await Promise.all(
-    films.map(async (film) => {
-      // Ambil episode terbaru untuk film ini
-      const { data: latestEpisode, error: episodeError } = await supabase
-        .from("episode")
-        .select("episode_number, video_url")
-        .eq("film_id", film.id)
-        .order("episode_number", { ascending: false })
-        .limit(1)
-        .single();
+  // Kelompokkan berdasarkan film_id untuk mendapatkan episode terbaru per film
+  const filmMap = new Map();
+  
+  episodes.forEach(episode => {
+    if (!episode.film) return;
+    
+    const filmId = episode.film.id;
+    
+    if (!filmMap.has(filmId)) {
+      filmMap.set(filmId, {
+        id: filmId,
+        title: episode.film.title,
+        image_url: episode.film.image_url,
+        latest_episode: episode.film.latest_episode,
+        latest_episode_number: episode.episode_number,
+        latest_episode_url: episode.video_url,
+        episode_created_at: episode.created_at
+      });
+    }
+  });
 
-      if (!episodeError && latestEpisode) {
-        return {
-          ...film,
-          latest_episode_number: latestEpisode.episode_number,
-          latest_episode_url: latestEpisode.video_url
-        };
-      }
-
-      // Fallback ke data default jika tidak ada episode
-      return {
-        ...film,
-        latest_episode_number: film.latest_episode || 1,
-        latest_episode_url: film.video_url
-      };
-    })
-  );
-
-  return filmsWithLatestEpisode;
+  return Array.from(filmMap.values())
+    .sort((a, b) => new Date(b.episode_created_at) - new Date(a.episode_created_at));
 }
 
 // === TAMPILKAN FILM DENGAN PAGINATION ===
@@ -141,7 +137,7 @@ function tampilkanFilm(daftarFilm) {
     card.innerHTML = `
       <a href="${episodeLink}">
         <div class="thumbnail-container">
-          <img src="${film.image_url}" alt="${film.title}">
+          <img src="${film.image_url}" alt="${film.title}" onerror="this.src='https://via.placeholder.com/300x400/333/fff?text=No+Image'">
           <div class="episode-badge">${episodeText}</div>
         </div>
         <h4>${film.title}</h4>
@@ -164,10 +160,10 @@ function updatePagination(totalItems) {
   nextBtn.disabled = currentPage === totalPages || totalPages === 0;
 }
 
-// === FITUR: FILM TERBARU ===
+// === FITUR: FILM TERBARU (EPISODE TERBARU) ===
 async function muatFilmTerbaru() {
-  sectionTitle.textContent = "Terbaru";
-  allFilms = await ambilSemuaFilm();
+  sectionTitle.textContent = "Episode Terbaru";
+  allFilms = await ambilEpisodeTerbaru();
   filteredFilms = [...allFilms];
   tampilkanFilm(allFilms);
 }
@@ -175,7 +171,7 @@ async function muatFilmTerbaru() {
 // === FITUR: UNTUKMU (Acak berbeda setiap refresh) ===
 async function muatUntukmu() {
   sectionTitle.textContent = "Untukmu";
-  const data = await ambilSemuaFilm();
+  const data = await ambilEpisodeTerbaru();
 
   // Acak urutan film agar setiap refresh berbeda
   const acak = data
@@ -198,7 +194,7 @@ searchInput.addEventListener("input", async (e) => {
     // Kembali ke tab aktif sebelumnya
     const activeTab = localStorage.getItem("activeTab") || "terbaru";
     if (activeTab === "terbaru") {
-      sectionTitle.textContent = "Terbaru";
+      sectionTitle.textContent = "Episode Terbaru";
       filteredFilms = [...allFilms];
       tampilkanFilm(allFilms);
     } else {
@@ -217,7 +213,8 @@ searchInput.addEventListener("input", async (e) => {
       *,
       episode (
         episode_number,
-        created_at
+        created_at,
+        video_url
       )
     `)
     .ilike("title", `%${keyword}%`);
@@ -273,3 +270,10 @@ nextBtn.addEventListener("click", () => {
     tampilkanFilm(filteredFilms);
   }
 });
+
+// === CHAT BUTTON HANDLER ===
+if (chatButton) {
+  chatButton.addEventListener("click", () => {
+    window.location.href = "chat.html";
+  });
+}
