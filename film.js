@@ -40,13 +40,6 @@ let isFavorited = false;
 let allEpisodes = [];
 const INITIAL_EPISODES_TO_SHOW = 3;
 
-// SMARTLINK controller state
-let smartlinkShown = false;     // ensure popup only once per page
-let smartlinkCooldown = false;  // short cooldown to avoid double-fire
-
-// SMARTLINK URL (from global window var set in HTML)
-const SMARTLINK_URL = (window.SMARTLINK_URL) ? window.SMARTLINK_URL : "https://www.effectivegatecpm.com/q8gtyrietf?key=be139c3d3cc1d6f25743f0a3140c618e";
-
 // === LOAD FILM DETAIL SAAT PAGE LOAD ===
 document.addEventListener('DOMContentLoaded', async () => {
   // Ambil ID film dari URL parameter
@@ -82,9 +75,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Setup event listeners
   setupEventListeners();
-
-  // Setup Smartlink triggers (global)
-  setupGlobalSmartlinkTriggers();
 });
 
 // === LOAD DETAIL FILM ===
@@ -185,9 +175,7 @@ function createEpisodeElement(episode, isHidden = false) {
   `;
   
   // Add click event untuk memutar episode
-  episodeElement.addEventListener('click', async (ev) => {
-    // show smartlink (any episode click triggers)
-    triggerSmartlinkFromEvent(ev);
+  episodeElement.addEventListener('click', async () => {
     await playEpisode(episode.id);
     updateActiveEpisode();
   });
@@ -351,11 +339,6 @@ async function loadRecommendations() {
         </div>
       </a>
     `;
-    // Ensure clicking recommendation triggers smartlink (and then navigation naturally occurs via anchor)
-    card.addEventListener('click', (ev) => {
-      triggerSmartlinkFromEvent(ev);
-      // Let the default navigation happen (anchor inside)
-    });
     recommendationsContainer.appendChild(card);
   });
 }
@@ -477,8 +460,7 @@ async function checkUserInteraction() {
 
 // === LIKE/FAVORITE HANDLERS ===
 if (likeBtn) {
-  likeBtn.addEventListener('click', async (ev) => {
-    triggerSmartlinkFromEvent(ev); // trigger smartlink when clicking like
+  likeBtn.addEventListener('click', async () => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -510,8 +492,7 @@ if (likeBtn) {
 }
 
 if (favoriteBtn) {
-  favoriteBtn.addEventListener('click', async (ev) => {
-    triggerSmartlinkFromEvent(ev); // trigger smartlink when clicking favorite
+  favoriteBtn.addEventListener('click', async () => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -543,8 +524,7 @@ if (favoriteBtn) {
 
 // === SHARE HANDLER ===
 if (shareBtn) {
-  shareBtn.addEventListener('click', (ev) => {
-    triggerSmartlinkFromEvent(ev); // trigger smartlink on share click
+  shareBtn.addEventListener('click', () => {
     const shareUrl = window.location.href;
     const shareText = `Tonton "${currentFilmData?.title}" di Dunia Kultivator!`;
     
@@ -691,140 +671,3 @@ function setupEventListeners() {
     });
   }
 }
-
-/* ============================
-   SMARTLINK: CENTRAL HANDLER
-   ============================ */
-
-/**
- * setupGlobalSmartlinkTriggers
- * - Triggers smartlink popup for: play event (first play), clicking episodes, clicking recommendation cards,
- *   and clicking any button (to follow user's request)
- * - Ensures popup only shown once per page (smartlinkShown)
- */
-function setupGlobalSmartlinkTriggers() {
-  // Trigger on first user-initiated video play (if not already fired)
-  if (videoPlayer) {
-    videoPlayer.addEventListener('play', () => {
-      triggerSmartlink();
-    }, { once: true });
-  }
-
-  // Clicks inside episodesList are already wired in createEpisodeElement, but ensure any click still triggers
-  if (episodesList) {
-    episodesList.addEventListener('click', () => {
-      triggerSmartlink();
-    });
-  }
-
-  // Clicks inside recommendations container
-  if (recommendationsContainer) {
-    recommendationsContainer.addEventListener('click', () => {
-      triggerSmartlink();
-    });
-  }
-
-  // Any button click on the page triggers smartlink (but we block a few safe exceptions)
-  document.addEventListener('click', (ev) => {
-    const target = ev.target;
-    // If already shown or in cooldown, ignore
-    if (smartlinkShown || smartlinkCooldown) return;
-
-    // Ignore clicks on the smartlink popup itself
-    if (target.closest && target.closest('#smartlink-popup')) return;
-
-    // If target is an actionable button or inside .action-buttons or has role=button or is <button> or .action-btn
-    const isButtonLike = target.tagName === 'BUTTON' ||
-                         target.closest && target.closest('button') ||
-                         target.classList.contains('action-btn') ||
-                         target.closest && target.closest('.action-buttons') ||
-                         target.getAttribute && target.getAttribute('role') === 'button';
-
-    // Avoid triggering on form inputs, anchors used for navigation (let anchor click navigate), or textareas
-    const isFormElement = target.tagName === 'A' || target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest && target.closest('a');
-
-    if (isButtonLike && !isFormElement) {
-      triggerSmartlink();
-    }
-  }, { capture: true });
-}
-
-/**
- * triggerSmartlinkFromEvent(ev)
- * - Called inline from event handlers where we want to trigger popup before navigation/action
- * - Prevents double firing by using cooldown and then allows default action to continue
- */
-function triggerSmartlinkFromEvent(ev) {
-  // If popup already shown, do nothing
-  if (smartlinkShown) return;
-  if (smartlinkCooldown) return;
-
-  // Start a short cooldown to avoid multiple triggers from same click
-  smartlinkCooldown = true;
-  setTimeout(() => smartlinkCooldown = false, 600);
-
-  // Show popup (no preventDefault unless needed)
-  triggerSmartlink();
-}
-
-/**
- * triggerSmartlink
- * - Creates a slide-up popup at bottom center
- * - Shown only once (smartlinkShown)
- * - Auto-hide after 12 seconds
- * - CTA opens SMARTLINK_URL in new tab
- */
-function triggerSmartlink() {
-  if (smartlinkShown) return;
-  smartlinkShown = true;
-
-  // Create popup container
-  let popup = document.getElementById('smartlink-popup');
-  if (!popup) {
-    popup = document.createElement('div');
-    popup.id = 'smartlink-popup';
-    popup.className = 'mini'; // default mini (CSS handles layout)
-    popup.innerHTML = `
-      <div class="smartlink-card">
-        <div class="smartlink-text">Dapatkan penawaran menarik dari sponsor! Klik untuk melihat.</div>
-        <a class="smartlink-cta" target="_blank" rel="noopener noreferrer" href="${SMARTLINK_URL}">Lihat</a>
-        <button class="smartlink-close" aria-label="Tutup">✕</button>
-      </div>
-    `;
-    document.body.appendChild(popup);
-
-    // Close button
-    popup.querySelector('.smartlink-close').addEventListener('click', () => {
-      hideSmartlinkPopup(popup);
-    });
-
-    // If user clicks CTA, we keep the popup (optional) but still mark shown
-    popup.querySelector('.smartlink-cta').addEventListener('click', () => {
-      // When the CTA is clicked, we do not re-open or re-show later (smartlinkShown keeps true)
-      // Allow new tab to open via target="_blank"
-    });
-  }
-
-  // Show with animation (CSS class)
-  requestAnimationFrame(() => {
-    popup.classList.add('show');
-  });
-
-  // Auto hide after 12s
-  setTimeout(() => {
-    hideSmartlinkPopup(popup);
-  }, 12000);
-}
-
-function hideSmartlinkPopup(popup) {
-  if (!popup) popup = document.getElementById('smartlink-popup');
-  if (!popup) return;
-  popup.classList.remove('show');
-  setTimeout(() => {
-    if (popup && popup.parentNode) popup.parentNode.removeChild(popup);
-  }, 400);
-}
-
-/* ============================
-   END SMARTLINK
-   ============================ */
