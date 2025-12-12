@@ -184,56 +184,56 @@
       </form>
     </div>
 
-<!-- Spoiler Form -->
-<div id="spoiler-tab" class="tab-content">
-  <form id="spoilerForm" class="admin-form">
-    <h2 id="spoilerFormTitle">Tambah Spoiler/Preview</h2>
-    
-    <input type="hidden" id="spoilerId" name="id">
-    
-    <div class="form-group">
-      <label for="spoilerFilm">Pilih Donghua *</label>
-      <select id="spoilerFilm" name="film_id" required>
-        <option value="">Pilih Donghua...</option>
-      </select>
-    </div>
+    <!-- Spoiler Form -->
+    <div id="spoiler-tab" class="tab-content">
+      <form id="spoilerForm" class="admin-form">
+        <h2 id="spoilerFormTitle">Tambah Spoiler/Preview</h2>
+        
+        <input type="hidden" id="spoilerId" name="id">
+        
+        <div class="form-group">
+          <label for="spoilerFilm">Pilih Donghua *</label>
+          <select id="spoilerFilm" name="film_id" required>
+            <option value="">Pilih Donghua...</option>
+          </select>
+        </div>
 
-    <div class="form-group">
-      <label for="spoilerTitle">Judul Spoiler *</label>
-      <input type="text" id="spoilerTitle" name="title" required 
-             placeholder="Contoh: Preview Episode 10 - Pertarungan Epik">
-    </div>
+        <div class="form-group">
+          <label for="spoilerTitle">Judul Spoiler *</label>
+          <input type="text" id="spoilerTitle" name="title" required 
+                 placeholder="Contoh: Preview Episode 10 - Pertarungan Epik">
+        </div>
 
-    <div class="form-group">
-      <label for="spoilerDescription">Deskripsi Spoiler</label>
-      <textarea id="spoilerDescription" name="description" rows="3" 
-                placeholder="Deskripsi singkat tentang spoiler ini..."></textarea>
-    </div>
+        <div class="form-group">
+          <label for="spoilerDescription">Deskripsi Spoiler</label>
+          <textarea id="spoilerDescription" name="description" rows="3" 
+                    placeholder="Deskripsi singkat tentang spoiler ini..."></textarea>
+        </div>
 
-    <div class="form-group">
-      <label for="spoilerVideoUrl">URL Video Spoiler *</label>
-      <input type="url" id="spoilerVideoUrl" name="video_url" required 
-             placeholder="https://example.com/spoiler-video.mp4">
-      <small class="form-help">Pastikan URL video valid dan accessible. Durasi disarankan 15-60 detik.</small>
-    </div>
+        <div class="form-group">
+          <label for="spoilerVideoUrl">URL Video Spoiler *</label>
+          <input type="url" id="spoilerVideoUrl" name="video_url" required 
+                 placeholder="https://example.com/spoiler-video.mp4">
+          <small class="form-help">Pastikan URL video valid dan accessible. Durasi disarankan 15-60 detik.</small>
+        </div>
 
-    <div class="form-group">
-      <label for="spoilerDuration">Durasi (detik)</label>
-      <input type="number" id="spoilerDuration" name="duration" min="1" max="300"
-             placeholder="30">
-      <small class="form-help">Durasi video spoiler dalam detik (maksimal 5 menit)</small>
-    </div>
+        <div class="form-group">
+          <label for="spoilerDuration">Durasi (detik)</label>
+          <input type="number" id="spoilerDuration" name="duration" min="1" max="300"
+                 placeholder="30">
+          <small class="form-help">Durasi video spoiler dalam detik (maksimal 5 menit)</small>
+        </div>
 
-    <div class="form-actions">
-      <button type="submit" class="btn-primary" id="spoilerSubmitBtn">
-        <i class="fas fa-plus"></i> Tambah Spoiler
-      </button>
-      <button type="button" class="btn-secondary" id="spoilerCancelBtn" style="display: none;">
-        <i class="fas fa-times"></i> Batal Edit
-      </button>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="spoilerSubmitBtn">
+            <i class="fas fa-plus"></i> Tambah Spoiler
+          </button>
+          <button type="button" class="btn-secondary" id="spoilerCancelBtn" style="display: none;">
+            <i class="fas fa-times"></i> Batal Edit
+          </button>
+        </div>
+      </form>
     </div>
-  </form>
-</div>
 
     <!-- Manage Content -->
     <div id="manage-tab" class="tab-content">
@@ -263,9 +263,21 @@
         <div id="episodes-manage" class="manage-content">
           <div class="content-header">
             <h3>Daftar Episode</h3>
-            <button id="refreshEpisodes" class="btn-secondary">
-              <i class="fas fa-sync-alt"></i> Refresh
-            </button>
+            <div class="episode-filters">
+              <div class="filter-group">
+                <label for="episodeFilmFilter"><i class="fas fa-filter"></i> Filter Donghua:</label>
+                <select id="episodeFilmFilter" class="filter-select">
+                  <option value="">Semua Donghua</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="episodeSearch"><i class="fas fa-search"></i> Cari:</label>
+                <input type="text" id="episodeSearch" class="search-input" placeholder="Cari episode...">
+              </div>
+              <button id="refreshEpisodes" class="btn-secondary">
+                <i class="fas fa-sync-alt"></i> Refresh
+              </button>
+            </div>
           </div>
           <div id="episodesList" class="content-list">
             <!-- Episodes will be loaded here -->

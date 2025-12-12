@@ -33,6 +33,10 @@ const spoilerCancelBtn = document.getElementById('spoilerCancelBtn');
 const episodeFilmSelect = document.getElementById('episodeFilm');
 const spoilerFilmSelect = document.getElementById('spoilerFilm');
 
+// Filter Elements
+const episodeFilmFilter = document.getElementById('episodeFilmFilter');
+const episodeSearchInput = document.getElementById('episodeSearch');
+
 // Management Lists
 const filmsList = document.getElementById('filmsList');
 const episodesList = document.getElementById('episodesList');
@@ -53,6 +57,8 @@ const adminEmail = document.getElementById('adminEmail');
 let isEditingFilm = false;
 let isEditingEpisode = false;
 let isEditingSpoiler = false;
+let allEpisodes = []; // Menyimpan semua episode untuk pencarian
+let selectedFilmId = ''; // Untuk menyimpan filter donghua yang dipilih
 
 // === INITIALIZATION ===
 document.addEventListener('DOMContentLoaded', async () => {
@@ -236,6 +242,24 @@ function setupEventListeners() {
   refreshFilmsBtn.addEventListener('click', () => loadFilms());
   refreshEpisodesBtn.addEventListener('click', () => loadEpisodes());
   refreshSpoilersBtn.addEventListener('click', () => loadSpoilers());
+
+  // Filter and Search Events
+  episodeFilmFilter.addEventListener('change', (e) => {
+    selectedFilmId = e.target.value;
+    filterAndSearchEpisodes();
+  });
+
+  episodeSearchInput.addEventListener('input', (e) => {
+    setTimeout(() => {
+      filterAndSearchEpisodes();
+    }, 300);
+  });
+
+  episodeSearchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      filterAndSearchEpisodes();
+    }
+  });
 }
 
 // === TAB MANAGEMENT ===
@@ -277,6 +301,7 @@ async function loadFilmsForSelect() {
     // Clear existing options
     episodeFilmSelect.innerHTML = '<option value="">Pilih Donghua...</option>';
     spoilerFilmSelect.innerHTML = '<option value="">Pilih Donghua...</option>';
+    episodeFilmFilter.innerHTML = '<option value="">Semua Donghua</option>';
 
     // Add film options
     films.forEach(film => {
@@ -285,7 +310,11 @@ async function loadFilmsForSelect() {
       option.textContent = film.title;
       
       episodeFilmSelect.appendChild(option.cloneNode(true));
-      spoilerFilmSelect.appendChild(option);
+      spoilerFilmSelect.appendChild(option.cloneNode(true));
+      
+      // For filter
+      const filterOption = option.cloneNode(true);
+      episodeFilmFilter.appendChild(filterOption);
     });
 
     console.log(`✅ Loaded ${films.length} films for select`);
@@ -671,16 +700,16 @@ async function loadEpisodes() {
 
     if (error) throw error;
 
+    // Simpan semua episode untuk pencarian
+    allEpisodes = episodes;
+
     if (episodes.length === 0) {
       episodesList.innerHTML = '<div class="empty-state"><i class="fas fa-play-circle"></i><h4>Belum ada episode</h4><p>Tambah episode pertama Anda</p></div>';
       return;
     }
 
-    episodesList.innerHTML = '';
-    episodes.forEach(episode => {
-      const episodeElement = createEpisodeItem(episode);
-      episodesList.appendChild(episodeElement);
-    });
+    // Tampilkan semua episode secara default
+    displayEpisodes(episodes);
 
     console.log(`✅ Loaded ${episodes.length} episodes`);
   } catch (error) {
@@ -721,6 +750,49 @@ async function loadSpoilers() {
     console.error('Error loading spoilers:', error);
     spoilersList.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Gagal memuat spoiler</p></div>';
   }
+}
+
+// === FILTER AND SEARCH FUNCTIONS ===
+function filterAndSearchEpisodes() {
+  if (allEpisodes.length === 0) {
+    return;
+  }
+
+  let filteredEpisodes = [...allEpisodes];
+  const searchTerm = episodeSearchInput.value.toLowerCase().trim();
+
+  // Filter berdasarkan donghua
+  if (selectedFilmId) {
+    filteredEpisodes = filteredEpisodes.filter(episode => 
+      episode.film_id == selectedFilmId
+    );
+  }
+
+  // Filter berdasarkan pencarian
+  if (searchTerm) {
+    filteredEpisodes = filteredEpisodes.filter(episode => 
+      episode.title.toLowerCase().includes(searchTerm) ||
+      episode.film.title.toLowerCase().includes(searchTerm) ||
+      episode.episode_number.toString().includes(searchTerm)
+    );
+  }
+
+  // Tampilkan hasil filter
+  displayEpisodes(filteredEpisodes);
+}
+
+function displayEpisodes(episodes) {
+  episodesList.innerHTML = '';
+
+  if (episodes.length === 0) {
+    episodesList.innerHTML = '<div class="empty-state"><i class="fas fa-play-circle"></i><h4>Tidak ada episode</h4><p>Tidak ditemukan episode yang sesuai dengan filter</p></div>';
+    return;
+  }
+
+  episodes.forEach(episode => {
+    const episodeElement = createEpisodeItem(episode);
+    episodesList.appendChild(episodeElement);
+  });
 }
 
 // === CREATE CONTENT ITEMS ===
@@ -836,6 +908,7 @@ async function deleteFilm(filmId) {
     showNotification('Donghua berhasil dihapus!', 'success');
     await loadFilms();
     await loadFilmsForSelect();
+    await loadEpisodes();
   } catch (error) {
     console.error('Error deleting film:', error);
     showNotification(`Gagal menghapus donghua: ${error.message}`, 'error');
