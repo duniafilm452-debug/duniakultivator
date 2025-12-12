@@ -15,9 +15,6 @@ body {
 .navbar {
   background-color: #222;
   color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: 12px 20px;
   position: sticky;
   top: 0;
@@ -27,18 +24,101 @@ body {
 .navbar .logo {
   font-size: 1.2rem;
   font-weight: 600;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* === CHANNEL NOTIFICATION === */
+.channel-notification {
+  background: linear-gradient(135deg, rgba(0, 144, 204, 0.1), rgba(0, 188, 212, 0.1));
+  border: 1px solid rgba(0, 144, 204, 0.3);
+  border-radius: 8px;
+  padding: 12px 15px;
+  margin: 10px 0 15px 0;
+  text-align: center;
+}
+
+.notification-text {
+  color: #e0f7fa;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin-bottom: 10px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.channel-links {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.channel-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.channel-btn.telegram {
+  background: linear-gradient(135deg, #0088cc, #26a5e4);
+  color: white;
+}
+
+.channel-btn.whatsapp {
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  color: white;
+}
+
+.channel-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.channel-btn:active {
+  transform: translateY(0);
+}
+
+.channel-btn i {
+  font-size: 1.1rem;
+}
+
+.navbar nav {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .navbar nav a {
   color: #ddd;
   text-decoration: none;
-  margin-left: 16px;
+  padding: 5px 0;
+  position: relative;
   transition: 0.3s;
+  font-weight: 500;
 }
 
 .navbar nav a:hover,
 .navbar nav a.active {
   color: #00bcd4;
+}
+
+.navbar nav a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #00bcd4;
+  border-radius: 2px;
 }
 
 /* === SEARCH SECTION === */
@@ -289,6 +369,16 @@ body:has(.spoiler-feed) footer {
     font-size: 1.1rem;
   }
   
+  .notification-text {
+    font-size: 0.75rem;
+    padding: 0 5px;
+  }
+  
+  .channel-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+  
   .search-section {
     padding: 12px 15px;
   }
@@ -336,9 +426,37 @@ body:has(.spoiler-feed) footer {
   }
   
   .navbar {
-    flex-direction: column;
-    gap: 8px;
     padding: 8px 10px;
+  }
+  
+  .notification-text {
+    font-size: 0.7rem;
+    line-height: 1.3;
+  }
+  
+  .channel-links {
+    gap: 10px;
+  }
+  
+  .channel-btn {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+  
+  .channel-btn span {
+    display: none; /* Sembunyikan teks di layar kecil */
+  }
+  
+  .channel-btn i {
+    font-size: 1rem;
+  }
+  
+  .navbar nav {
+    gap: 15px;
+  }
+  
+  .navbar nav a {
+    font-size: 0.9rem;
   }
   
   .pagination {
@@ -389,8 +507,13 @@ body:has(.spoiler-feed) footer {
     left: 3px;
   }
   
+  .channel-btn {
+    padding: 8px;
+    border-radius: 50%;
+  }
+  
   .floating-chat-btn span {
-    display: none; /* Sembunyikan teks di layar sangat kecil */
+    display: none;
   }
   
   .floating-chat-btn {

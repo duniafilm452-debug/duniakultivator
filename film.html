@@ -16,15 +16,32 @@
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+  
 </head>
 <body>
 
-  <!-- NAVBAR -->
   <header class="navbar">
     <h1 class="logo">🌏 Dunia Kultivator</h1>
+    
+    <!-- Notifikasi Channel -->
+    <div class="channel-notification">
+      <p class="notification-text">
+        Kami meminta maaf jika hanya menampilkan 1-3 Episode dan akan menghapusnya setelah episode terbaru dirilis. Kami menyarankan untuk mengikuti Chanel WhatsApp atau Telegram kami agar tidak ketinggalan Episode Terbaru. "Terima Kasih"
+      </p>
+      <div class="channel-links">
+        <a href="https://t.me/duniakultivator" target="_blank" class="channel-btn telegram">
+          <i class="fab fa-telegram"></i>
+          <span>Telegram</span>
+        </a>
+        <a href="https://whatsapp.com/channel/0029VaxBGDL8vd1OQgPCdf2E" target="_blank" class="channel-btn whatsapp">
+          <i class="fab fa-whatsapp"></i>
+          <span>WhatsApp</span>
+        </a>
+      </div>
+    </div>
+    
     <nav>
-      <a href="index.html">Donghua</a>
+      <a href="index.html" class="#">Donghua</a>
       <a href="spoiler.html">Spoiler</a>
     </nav>
   </header>
@@ -63,8 +80,15 @@
           <button id="favoriteBtn" class="action-btn">
             <i class="far fa-bookmark"></i> Favorite
           </button>
+          <button id="fullEpisodeBtn" class="action-btn">
+            <i class="fas fa-external-link-alt"></i> Full Episode
+          </button>
           <button id="shareBtn" class="action-btn">
             <i class="fas fa-share"></i> Share
+          </button>
+          <!-- Tombol Donasi dengan Iklan -->
+          <button id="donasiBtn" class="action-btn donasi-btn">
+            <i class="fas fa-heart"></i> Donasi dengan iklan
           </button>
         </div>
       </div>

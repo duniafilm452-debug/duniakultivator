@@ -7,6 +7,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 // Cloudflare R2 Configuration
 const CLOUDFLARE_R2_BASE_URL = "https://pub-97e59aa214094a8abdf6ba4437f78b21.r2.dev";
 
+// Adsterra Smartlink Configuration
+const ADSTERRA_SMARTLINK = "https://www.effectivegatecpm.com/q8gtyrietf?key=be139c3d3cc1d6f25743f0a3140c618e";
+
 // === ELEMEN DOM ===
 const videoPlayer = document.getElementById('videoPlayer');
 const videoSource = document.getElementById('videoSource');
@@ -27,7 +30,9 @@ const scrollIndicator = document.getElementById('episodesScrollIndicator');
 // Action Buttons
 const likeBtn = document.getElementById('likeBtn');
 const favoriteBtn = document.getElementById('favoriteBtn');
+const fullEpisodeBtn = document.getElementById('fullEpisodeBtn');
 const shareBtn = document.getElementById('shareBtn');
+const donasiBtn = document.getElementById('donasiBtn');
 
 // === VARIABEL GLOBAL ===
 let currentFilmId = null;
@@ -75,7 +80,46 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Setup event listeners
   setupEventListeners();
+  
+  // Tambahkan pesan instruksi donasi
+  addDonationInstruction();
 });
+
+// === TAMBAHKAN PESAN INSTRUKSI DONASI ===
+function addDonationInstruction() {
+  // Cek apakah container action buttons sudah ada
+  const actionButtonsContainer = document.querySelector('.action-buttons');
+  if (!actionButtonsContainer) return;
+  
+  // Cek apakah pesan sudah ada
+  if (document.getElementById('donationInstruction')) return;
+  
+  // Buat elemen pesan instruksi
+  const instructionElement = document.createElement('div');
+  instructionElement.id = 'donationInstruction';
+  instructionElement.className = 'donation-instruction';
+  instructionElement.innerHTML = `
+    <div class="instruction-content">
+      <i class="fas fa-info-circle"></i>
+      <span class="instruction-text">Tolong tetap berada di iklan selama 5-10 detik. Terima kasih!</span>
+    </div>
+    <div class="instruction-timer">
+      <div class="timer-bar"></div>
+    </div>
+  `;
+  
+  // Sisipkan sebelum tombol donasi
+  const donasiButton = document.querySelector('.donasi-btn');
+  if (donasiButton && donasiButton.parentNode) {
+    // Cari posisi tombol donasi dalam container
+    const container = donasiButton.parentNode;
+    // Sisipkan sebelum tombol donasi
+    container.insertBefore(instructionElement, donasiButton);
+  } else {
+    // Jika tombol donasi tidak ditemukan, tambahkan di akhir
+    actionButtonsContainer.insertBefore(instructionElement, actionButtonsContainer.lastElementChild);
+  }
+}
 
 // === LOAD DETAIL FILM ===
 async function loadFilmDetail(filmId) {
@@ -522,6 +566,20 @@ if (favoriteBtn) {
   });
 }
 
+// === FULL EPISODE BUTTON HANDLER ===
+if (fullEpisodeBtn) {
+  fullEpisodeBtn.addEventListener('click', () => {
+    // Ganti URL berikut dengan URL tujuan yang sesuai
+    const fullEpisodeUrl = "https://example.com/full-episode-series";
+    
+    // Buka di tab baru
+    window.open(fullEpisodeUrl, '_blank');
+    
+    // Optional: Tambahkan tracking atau analytics di sini
+    console.log('User mengklik Full Episode untuk film:', currentFilmData?.title);
+  });
+}
+
 // === SHARE HANDLER ===
 if (shareBtn) {
   shareBtn.addEventListener('click', () => {
@@ -540,6 +598,222 @@ if (shareBtn) {
       alert('Link berhasil disalin ke clipboard!');
     }
   });
+}
+
+// === DONASI DENGAN IKLAN HANDLER ===
+if (donasiBtn) {
+  donasiBtn.addEventListener('click', () => {
+    // Tampilkan modal konfirmasi dengan instruksi
+    showDonationConfirmation();
+  });
+}
+
+// === FUNGSI TAMBAHAN UNTUK DONASI ===
+function showDonationConfirmation() {
+  // Cek apakah modal sudah ada
+  if (document.getElementById('donationModal')) return;
+  
+  // Buat modal konfirmasi
+  const modal = document.createElement('div');
+  modal.id = 'donationModal';
+  modal.className = 'donation-modal-overlay';
+  modal.innerHTML = `
+    <div class="donation-modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-heart"></i> Donasi dengan Iklan</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-content">
+        <div class="instruction-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <p class="modal-text">
+          <strong>Penting:</strong> Untuk donasi berhasil, tolong tetap berada di halaman iklan selama <span class="highlight">5-10 detik</span>.
+        </p>
+        <p class="modal-text">
+          Setelah itu, Anda dapat menutup tab iklan dan kembali ke halaman ini.
+        </p>
+        <div class="countdown-container">
+          <div class="countdown-text">Iklan akan terbuka dalam:</div>
+          <div class="countdown" id="donationCountdown">3</div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel">Batal</button>
+          <button class="btn-confirm" disabled>
+            <i class="fas fa-external-link-alt"></i> Buka Iklan
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Setup event listeners untuk modal
+  setupDonationModal();
+}
+
+function setupDonationModal() {
+  const modal = document.getElementById('donationModal');
+  const closeBtn = modal.querySelector('.modal-close');
+  const cancelBtn = modal.querySelector('.btn-cancel');
+  const confirmBtn = modal.querySelector('.btn-confirm');
+  const countdownElement = modal.querySelector('#donationCountdown');
+  
+  let countdown = 3;
+  let countdownInterval;
+  
+  // Fungsi untuk memulai countdown
+  function startCountdown() {
+    countdownInterval = setInterval(() => {
+      countdown--;
+      countdownElement.textContent = countdown;
+      
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-external-link-alt"></i> Buka Iklan Sekarang';
+        confirmBtn.classList.add('ready');
+      }
+    }, 1000);
+  }
+  
+  // Mulai countdown
+  startCountdown();
+  
+  // Event listener untuk tombol close
+  closeBtn.addEventListener('click', () => {
+    clearInterval(countdownInterval);
+    modal.remove();
+  });
+  
+  // Event listener untuk tombol cancel
+  cancelBtn.addEventListener('click', () => {
+    clearInterval(countdownInterval);
+    modal.remove();
+  });
+  
+  // Event listener untuk tombol confirm
+  confirmBtn.addEventListener('click', () => {
+    clearInterval(countdownInterval);
+    modal.remove();
+    openDonationAd();
+  });
+  
+  // Tutup modal saat klik di luar
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      clearInterval(countdownInterval);
+      modal.remove();
+    }
+  });
+}
+
+function openDonationAd() {
+  // Simpan referrer (halaman saat ini)
+  const referrer = window.location.href;
+  
+  // Tambahkan parameter tracking ke URL smartlink
+  const trackedUrl = `${ADSTERRA_SMARTLINK}&ref=${encodeURIComponent(referrer)}`;
+  
+  // Buka smartlink Adsterra di tab baru
+  const newWindow = window.open(trackedUrl, '_blank', 'noopener,noreferrer');
+  
+  if (newWindow) {
+    // Fokus ke window baru
+    newWindow.focus();
+    
+    // Tampilkan pesan terima kasih
+    showThankYouMessage();
+    
+    // Optional: Log aktivitas donasi (jika ada analytics)
+    logDonationActivity();
+  } else {
+    // Fallback jika popup diblokir
+    alert('Pop-up diblokir. Silakan izinkan pop-up untuk donasi atau buka link secara manual.\n\nLink donasi: ' + trackedUrl);
+  }
+}
+
+function showThankYouMessage() {
+  // Tampilkan pesan toast atau alert
+  const toast = document.createElement('div');
+  toast.className = 'donation-toast';
+  toast.innerHTML = `
+    <div class="toast-content">
+      <i class="fas fa-heart"></i>
+      <span>Terima kasih atas donasi Anda! Dukungan Anda sangat berarti bagi kami.</span>
+    </div>
+  `;
+  
+  // Styling untuk toast
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(255, 82, 82, 0.3);
+    z-index: 10000;
+    animation: slideUp 0.3s ease-out;
+    max-width: 90%;
+  `;
+  
+  const toastContent = toast.querySelector('.toast-content');
+  toastContent.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // Hapus toast setelah 5 detik
+  setTimeout(() => {
+    toast.style.animation = 'slideDown 0.3s ease-in';
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, 5000);
+  
+  // Tambahkan CSS animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+    @keyframes slideDown {
+      from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(100%);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function logDonationActivity() {
+  // Fungsi untuk mencatat aktivitas donasi (bisa dikembangkan)
+  console.log('User melakukan donasi melalui iklan untuk film:', currentFilmData?.title);
+  
+  // Bisa ditambahkan tracking ke database atau analytics service
+  // Contoh: supabase.from('donations').insert({...})
 }
 
 // === UPDATE WATCH HISTORY ===
